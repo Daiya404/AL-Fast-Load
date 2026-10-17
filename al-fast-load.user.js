@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AniList Fast Load
 // @namespace    https://anilist.co/
-// @version      0.3.0
+// @version      0.3.1
 // @description  AniList performance optimizer: lazy media, off-screen row skipping, observer coalescing (makes heavy scripts like Tier Labels cheap), safe GraphQL cache/de-duplication with stale fallback, navigation prefetch, and early request start on reload.
 // @author       Daiya
 // @match        https://anilist.co/*
@@ -10,8 +10,10 @@
 // @noframes
 // @run-at       document-start
 // @grant        none
-// @downloadURL https://update.greasyfork.org/scripts/598442/AniList%20Fast%20Load.user.js
-// @updateURL https://update.greasyfork.org/scripts/598442/AniList%20Fast%20Load.meta.js
+// @homepageURL  https://github.com/Daiya404/AL-Fast-Load
+// @supportURL   https://github.com/Daiya404/AL-Fast-Load/issues
+// @downloadURL  https://raw.githubusercontent.com/Daiya404/AL-Fast-Load/main/al-fast-load.user.js
+// @updateURL    https://raw.githubusercontent.com/Daiya404/AL-Fast-Load/main/al-fast-load.user.js
 // ==/UserScript==
 
 /*

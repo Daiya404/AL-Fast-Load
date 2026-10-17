@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.3.1] - 2026-10-17
+
+- Sets up automatic syncing of this repository to Greasy Fork, so pushes to `main` publish to the Greasy Fork listing.
+- Adds `@homepageURL` and `@supportURL` pointing to the GitHub repository and its issue tracker.
+- Adds `@downloadURL` and `@updateURL` pointing to the raw `al-fast-load.user.js` on the `main` branch.
+- No functional changes to the script.
+
 ## [0.3.0] - 2026-10-17
 
 - Current repository baseline, matching the supplied `AniList Fast Load` userscript v0.3.0.
