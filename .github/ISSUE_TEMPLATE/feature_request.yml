@@ -1,0 +1,30 @@
+name: Feature request
+description: Suggest an optimization, compatibility improvement, or useful diagnostic.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement! Please focus on the problem you want solved rather than prescribing a specific implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the current limitation or annoyance.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: What would you like to happen?
+      description: Describe your proposed behavior or outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Include relevant AniList pages, browser details, or examples if useful.
+    validations:
+      required: false

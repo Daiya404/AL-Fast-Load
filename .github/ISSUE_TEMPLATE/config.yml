@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Install or update AniList Fast Load
+    url: https://greasyfork.org/en/scripts/598442-anilist-fast-load
+    about: Install the published userscript or check for updates.
