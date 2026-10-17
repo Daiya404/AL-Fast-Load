@@ -1,15 +1,13 @@
 # Changelog
 
-Notable changes to AniList Fast Load are documented here.
+## [0.3.0] - 2026-10-17
 
-## [0.2.5] - 2026-10-17
+- Current repository baseline, matching the supplied `AniList Fast Load` userscript v0.3.0.
+- Adds connection warm-up for the GraphQL API, media CDN, and font origins.
+- Adds lazy-media handling, off-screen row skipping, observer coalescing, faster text reads, and selector-probe memoization.
+- Adds Tier Labels assistance for missing or outdated list-score badges and keeps the sidebar data block out of its repair scope.
+- Adds safe GraphQL request deduplication, short-lived response caching, and eligible stale-response fallback.
+- Adds route learning, early request starts, and limited navigation prefetching.
+- Exposes runtime diagnostic counters through `window.__ALFL_STATS__`.
 
-- Current baseline imported from the published userscript.
-- Optimizes media loading and off-screen row rendering.
-- Coalesces selected mutation-observer work and reduces repeated text/selector work.
-- Adds GraphQL request deduplication, short-lived caching, and stale fallback.
-- Adds navigation prefetching and early request starts based on previously observed requests.
-- Includes AniList Tier Labels compatibility assistance.
-- Exposes diagnostic counters through `window.__ALFL_STATS__`.
-
-For full details, see the comments and configuration in `al-fast-load.user.js`.
+This changelog begins with the current project baseline. Older releases are not described here unless their source or release notes are added to the repository.

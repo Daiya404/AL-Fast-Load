@@ -1,87 +1,91 @@
 # AniList Fast Load
 
-**A performance-focused userscript for AniList.** It optimizes media loading, off-screen rendering, repeated DOM work, GraphQL requests, and navigation prefetching to help AniList feel smoother—especially on pages with lots of content or other userscripts enabled.
+**A standalone performance layer for AniList.**
 
-[Install from Greasy Fork](https://greasyfork.org/en/scripts/598442-anilist-fast-load) · [Report a bug](https://github.com/Daiya404/AL-Fast-Load/issues/new?template=bug_report.yml) · [Request a feature](https://github.com/Daiya404/AL-Fast-Load/issues/new?template=feature_request.yml)
+AniList Fast Load focuses on the work a page does behind the scenes: media scheduling, off-screen list rendering, repeated DOM work, and GraphQL requests. It is intended to improve responsiveness without redesigning AniList's interface or changing the site's normal features.
 
-> **Current release:** v0.2.5
+It can run by itself or alongside other AniList userscripts. In particular, it includes optimizations intended to reduce the repeated page-scanning work associated with AniList Tier Labels, plus an optional repair pass for list-score badges.
 
-## What it does
+[Install from Greasy Fork](https://greasyfork.org/en/scripts/598442-anilist-fast-load) · [Issues](https://github.com/Daiya404/AL-Fast-Load/issues)
 
-- **Lazy media loading:** applies lazy-loading defaults to images, iframes, and videos when appropriate.
-- **Off-screen rendering optimization:** uses browser rendering hints for supported list rows and activity content.
-- **Mutation observer coalescing:** reduces repeated callback work during bursts of DOM updates.
-- **Cheaper text and selector work:** optimizes selected `innerText` reads and memoizes repeated selector probes within a task.
-- **GraphQL request deduplication and caching:** identical requests can share in-flight work and briefly reuse cached responses.
-- **Stale-response fallback:** where eligible, a recent cached response can be used if a refresh fails.
-- **Navigation prefetching:** can start suitable requests when you hover over or touch navigation targets.
-- **Early request starts:** learns a limited set of requests from previous visits and can start them earlier on a later load.
-- **AniList Tier Labels assistance:** includes compatibility optimizations for score badges, including cases where badges need to be rebuilt.
+## Overview
 
-The script is designed to work on its own and to coexist with other AniList userscripts. It does not edit their source files.
+| Area | Behaviour |
+| --- | --- |
+| Connection warm-up | Preconnects to AniList's GraphQL endpoint, media CDN, and Google Fonts origins. |
+| Media scheduling | Applies lazy-loading defaults to supported images, iframes, and videos, including media inserted through HTML. |
+| Off-screen rows | Uses `content-visibility` and measured row sizes to reduce rendering work for supported list/activity content. |
+| Observer coalescing | Batches selected page-wide mutation-observer callbacks so repeated scans happen less often during DOM update bursts. |
+| Text and selector work | Optimizes selected score/label text reads and shares repeated selector probes within a task. |
+| GraphQL layer | Deduplicates matching in-flight requests and temporarily caches eligible successful query responses. |
+| Stale fallback | Can serve an eligible recent response if a refresh fails with a network or server-side error. |
+| Navigation prefetch | Uses learned route queries to warm eligible anime, manga, character, staff, studio, or user pages before navigation. |
+| Early request start | Learns a limited set of route queries and can start them at the beginning of a later page load. |
+| Tier Labels support | Checks list scores after page changes and gives missing or outdated badges back to Tier Labels for rebuilding. |
+
+The exact effect depends on the browser, device, network, AniList page, and other enabled scripts. This project does not promise a fixed speed increase.
 
 ## Install
 
-1. Install a userscript manager such as [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/).
-2. Open [AniList Fast Load on Greasy Fork](https://greasyfork.org/en/scripts/598442-anilist-fast-load).
-3. Click **Install** and confirm in your userscript manager.
-4. Reload [AniList](https://anilist.co/).
+1. Install [Violentmonkey](https://violentmonkey.github.io/) or [Tampermonkey](https://www.tampermonkey.net/).
+2. Visit [AniList Fast Load on Greasy Fork](https://greasyfork.org/en/scripts/598442-anilist-fast-load).
+3. Select **Install** and confirm in your userscript manager.
+4. Open or reload [AniList](https://anilist.co/).
 
-The script runs at `document-start` on AniList's main site and does not run inside frames.
+Greasy Fork is the recommended installation and update source. The repository contains the readable source for review and contributions.
 
 ## Compatibility
 
-- Supported site patterns: `https://anilist.co/*` and `https://www.anilist.co/*`.
-- Intended to run independently or alongside other AniList userscripts, including AL Additions and AniList Tier Labels.
-- Some optimizations depend on browser features and on AniList's current page implementation.
+- Matches `https://anilist.co/*` and `https://www.anilist.co/*`.
+- Runs at `document-start` and is configured not to run in frames.
+- Designed to work independently and alongside other AniList userscripts, including [AL Additions](https://greasyfork.org/en/scripts/594705-al-additions) and AniList Tier Labels.
+- Off-screen row skipping depends on browser support for `content-visibility`; unsupported environments should simply miss that optimization.
 
-Results vary by browser, device, network, page, and enabled userscripts. Fast Load does not promise a fixed speed increase. If a page behaves unexpectedly, temporarily disable the script and reload to help determine whether it is involved.
+## Configuration
+
+Feature switches and limits live in the `CFG` object near the top of `al-fast-load.user.js`. You can open the script in your userscript manager and change a setting from `true` to `false` to disable that feature. The same object contains timing and size limits for caching, prefetching, early starts, and Tier Labels assistance.
+
+Some features depend on others. For example, prefetching and early request starts use the GraphQL layer. Set `gqlTtl` to `0` to disable that layer.
 
 ## Diagnostics
 
-Open the browser's developer console while on AniList and run:
+On an AniList page, open your browser's developer console and evaluate:
 
 ```js
 window.__ALFL_STATS__
 ```
 
-The object exposes diagnostic counters for supported optimizations. These counters help with troubleshooting; they are not a benchmark and should not be treated as proof of a particular performance gain.
+The object exposes counters including GraphQL requests, cache hits, deduplicated requests, stale responses served, prefetches, early starts, observer batches, merged observer records, shared selector probes, and Tier Labels badge repairs.
 
-## Configuration
+These counters are intended for troubleshooting and are not a formal benchmark.
 
-The script's `CFG` object near the top of `al-fast-load.user.js` contains feature switches and limits. Advanced users can inspect the source to understand or adjust the available optimizations. If you change the script locally, keep a copy of your edits because an update from Greasy Fork may replace them.
+## Request handling and privacy
 
-## Privacy
+The GraphQL layer is designed to cache eligible read-only queries, not mutations that change account data. Requests associated with notifications and activity are excluded from caching. Only successful responses without GraphQL errors are stored, and stored responses do not replay rate-limit headers.
 
-Fast Load is a client-side userscript that works with AniList pages and its GraphQL API. Its request caching, prefetching, and early-start features affect requests made by your browser to AniList. The script's source is available in this repository for inspection.
+The script learns limited route/query information in browser local storage under `alfl:routes:v1`, with a 30-day expiry, so it can recognize requests to start early on a later visit. It does not store the AniList login token; when an early request needs authentication, the script obtains the current token from the live page.
 
-Do not post browser cookies, authorization headers, login tokens, or other private account data in an issue. Review the source code before installing if you want to verify the exact behavior for yourself.
-
-This project is independent and is not affiliated with or endorsed by AniList.
+Network activity is directed to AniList's own API/media infrastructure and the listed font origins for connection warm-up. The project does not intentionally send usage analytics to a separate service. You can inspect the complete source in this repository before installing.
 
 ## Troubleshooting
 
-1. Confirm the script is enabled in your userscript manager.
-2. Check that you're visiting `anilist.co`.
-3. Update to the latest version from Greasy Fork.
-4. Reload the page and check whether the problem persists.
-5. Temporarily disable Fast Load to compare behavior.
-6. If the problem remains, report it using the repository's bug report template.
+If something looks wrong:
 
-When reporting an issue, include your browser, userscript manager, script version, affected AniList page, steps to reproduce, and any relevant console errors. Remove private information before sharing logs.
+1. Temporarily disable Fast Load and reload the same page.
+2. If the issue changes, re-enable it and switch off relevant features one at a time in `CFG`.
+3. Check the developer console for errors and inspect `window.__ALFL_STATS__`.
+4. If you open an issue, include the script version, browser, userscript manager, affected page, reproduction steps, and relevant errors.
 
-## Development
+Remove cookies, authorization headers, login tokens, and other private information from any logs or screenshots before posting them.
 
-The userscript is currently distributed as a single JavaScript file: `al-fast-load.user.js`. There is no build step required to install or inspect it.
+## Contributing
 
-For contributions, read [CONTRIBUTING.md](CONTRIBUTING.md). For changes between releases, see [CHANGELOG.md](CHANGELOG.md).
+Bug reports, focused improvements, and compatibility feedback are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a change. Use the issue templates where possible.
 
-## Links
+## Related project
 
-- **Install / automatic updates:** [Greasy Fork](https://greasyfork.org/en/scripts/598442-anilist-fast-load)
-- **Source code:** [GitHub repository](https://github.com/Daiya404/AL-Fast-Load)
-- **Bug reports and feature requests:** [GitHub Issues](https://github.com/Daiya404/AL-Fast-Load/issues)
+**[AL Additions](https://greasyfork.org/en/scripts/594705-al-additions)** adds convenience features to AniList, including one-way list syncing to MyAnimeList, score and progress editing, airing indicators, opening and ending themes, MyAnimeList and Nyaa shortcuts, and banner downloads. Fast Load and AL Additions are separate scripts designed to work together.
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
+Distributed under the [MIT License](LICENSE).

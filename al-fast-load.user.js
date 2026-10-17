@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         AniList Fast Load
 // @namespace    https://anilist.co/
-// @version      0.2.5
+// @version      0.3.0
 // @description  AniList performance optimizer: lazy media, off-screen row skipping, observer coalescing (makes heavy scripts like Tier Labels cheap), safe GraphQL cache/de-duplication with stale fallback, navigation prefetch, and early request start on reload.
 // @author       Daiya
 // @match        https://anilist.co/*
@@ -56,7 +56,7 @@
     if (window.top !== window.self) return;
     // Also bails if an older version is still enabled, to avoid double-patching.
     if (window.__ANILIST_FAST_LOAD__ || window.__ANILIST_FAST_LOAD_V4__) return;
-    window.__ANILIST_FAST_LOAD__ = '0.2.5';
+    window.__ANILIST_FAST_LOAD__ = '0.3.0';
 
     /* ======================================================================
      * 0. Config
@@ -159,8 +159,7 @@
         const nativeCreate = Document.prototype.createElement;
         Document.prototype.createElement = function (tag, options) {
             const el = nativeCreate.call(this, tag, options);
-            const n = el.localName;
-            if (n === 'img' || n === 'iframe' || n === 'video') { try { lazify(el); } catch { /* ignore */ } }
+            try { lazify(el); } catch { /* ignore */ }
             return el;
         };
 
@@ -430,7 +429,7 @@
     }
 
     /* ======================================================================
-     * 7b. Tier Labels support
+     * 8. Tier Labels support
      *    (a) blockTierInData: Tier Labels skips any element carrying
      *    data-tier-modified, so marking the Average/Mean Score values up front leaves
      *    AniList's own text untouched. (Tier Labels' "refresh" on the developer
@@ -503,7 +502,7 @@
     }
 
     /* ======================================================================
-     * 8. GraphQL layer: cache, de-duplication, stale-on-error, prefetch
+     * 9. GraphQL layer: cache, de-duplication, stale-on-error, prefetch
      *
      *  - Only POSTs to graphql.anilist.co with a plain string JSON body.
      *  - Anything mentioning `mutation` is never cached and wipes the cache
@@ -528,6 +527,7 @@
         let bytes = 0;
         let epoch = 0;               // bumped by mutations
         let pausedUntil = 0;         // set after a 429
+        let freshFloor = 0;          // entries stored before this are only usable as stale fallbacks
         let prefetching = false;
 
         /* ------------------------- helpers ------------------------- */
@@ -567,15 +567,13 @@
         }
 
         function evict() {
+            // The Map is oldest-first, so one pass from the front removes expired entries
+            // and, if still over budget, the oldest live ones, then stops.
             const now = Date.now();
             for (const [key, entry] of store) {
-                if (now - entry.time > CFG.gqlStaleTtl) { bytes -= entry.size; store.delete(key); }
-            }
-            if (bytes <= CFG.gqlMaxBytes) return;
-            for (const [key, entry] of store) {
+                if (now - entry.time <= CFG.gqlStaleTtl && bytes <= CFG.gqlMaxBytes) break;
                 bytes -= entry.size;
                 store.delete(key);
-                if (bytes <= CFG.gqlMaxBytes) break;
             }
         }
 
@@ -769,7 +767,7 @@
             const now = Date.now();
             const cached = store.get(key);
 
-            if (cached && now - cached.time < CFG.gqlTtl) {
+            if (cached && cached.time >= freshFloor && now - cached.time < CFG.gqlTtl) {
                 stats.cacheHits++;
                 return Promise.resolve(toResponse(cached.snap));
             }
@@ -847,20 +845,34 @@
          * Replaying learned queries: navigation prefetch and early start
          * ================================================================== */
 
-        // A stale cache must never outlive an edit made in another tab or by a script
-        // whose requests do not pass through this wrapper.
-        document.addEventListener('visibilitychange', () => { if (!document.hidden) clearAll(); });
+        // An edit made in another tab (or by a script whose requests bypass this wrapper) must
+        // never be hidden behind a cached copy, so returning to the tab ends the fresh window.
+        // Old copies are kept for the stale-on-error fallback instead of being thrown away.
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) return;
+            epoch++; // responses already in flight are not stored
+            freshFloor = Date.now();
+            inflight.clear();
+        });
 
         const prefetched = new Map(); // `${shape}|${id}` -> time
         const stamps = [];            // request timestamps for the per-minute budget
         let dwellTimer = 0;
 
+        // One shared poll for every request waiting on the login token (gives up after 3 s).
+        let tokenWait = null;
         function waitForToken(cb) {
-            let tries = 0;
-            const t = setInterval(() => {
-                if (window.al_token) { clearInterval(t); cb(); }
-                else if (++tries > 300) clearInterval(t); // 3 s
-            }, 10);
+            tokenWait ||= new Promise((resolve) => {
+                let tries = 0;
+                const t = setInterval(() => {
+                    const ready = !!window.al_token;
+                    if (!ready && ++tries <= 300) return;
+                    clearInterval(t);
+                    tokenWait = null;
+                    resolve(ready);
+                }, 10);
+            });
+            tokenWait.then((ready) => { if (ready) cb(); });
         }
 
         // Sends the learned requests of `known` for `route`; returns how many were started.

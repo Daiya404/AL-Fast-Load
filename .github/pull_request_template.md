@@ -1,6 +1,6 @@
 ## Summary
 
-<!-- What does this change do, and why is it needed? -->
+<!-- What does this change do, and why? -->
 
 ## Changes
 
@@ -8,11 +8,15 @@
 
 ## Testing
 
-- [ ] Tested on the relevant AniList page(s).
+- [ ] Tested the relevant AniList page(s).
 - [ ] Checked the browser console for errors.
-- [ ] Checked compatibility with relevant userscripts, if applicable.
-- [ ] Confirmed no private account data or credentials are included.
+- [ ] Checked relevant userscript compatibility where applicable.
+- [ ] Removed credentials and private account data from examples/logs.
 
-## Notes / risks
+## Performance, compatibility, or privacy impact
 
-<!-- Mention performance trade-offs, limitations, or anything reviewers should know. -->
+<!-- Note any trade-offs, limitations, new network activity, or data handling. -->
+
+## Screenshots or diagnostics (if useful)
+
+<!-- Optional. Remove private information. -->

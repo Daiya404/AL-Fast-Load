@@ -1,47 +1,47 @@
-# Contributing to AniList Fast Load
+# Contributing
 
-Thanks for taking the time to help improve the project!
+Thanks for helping improve AniList Fast Load.
 
 ## Before opening an issue
 
-- Search existing issues to see whether the problem or idea has already been reported.
-- Use the bug report template for broken behavior or performance regressions.
-- Use the feature request template for suggestions.
-- Keep reports focused on one problem where possible.
+- Search existing issues for the same bug or suggestion.
+- Use the bug report template for broken behavior, compatibility problems, or regressions.
+- Use the feature request template for proposed improvements.
+- Keep one issue focused on one main problem.
 
 ## Bug reports
 
-Please include:
+Useful reports include:
 
-- AniList page or route where the issue happens
 - Fast Load version
 - Browser and version
 - Userscript manager and version
-- Other AniList userscripts that may be relevant
-- Steps to reproduce and expected versus actual behavior
-- Relevant console errors, with private information removed
+- AniList page or route affected
+- Steps to reproduce
+- Expected behaviour and actual behaviour
+- Relevant console errors or `window.__ALFL_STATS__` output
+- Other userscripts that may be involved
 
-If possible, test once with Fast Load disabled to help isolate the cause.
+When practical, compare the page with Fast Load temporarily disabled. Never attach cookies, authorization headers, login tokens, or other private account information.
 
-## Code changes
+## Pull requests
 
 1. Fork the repository and create a branch for your change.
-2. Keep changes focused and explain the reason for them.
-3. Preserve compatibility with AniList and other userscripts where practical.
-4. Avoid unnecessary changes to unrelated code.
-5. Test on the affected AniList pages and check the browser console.
-6. Open a pull request describing the change, how it was tested, and any trade-offs.
+2. Explain the user-visible problem or maintenance need.
+3. Keep the patch focused and avoid unrelated formatting changes.
+4. Test the relevant AniList pages and check the browser console.
+5. Describe the tests you performed and any limitations in the pull request.
 
-The project is currently distributed as a standalone userscript, so no build process is required.
+The project is distributed as a single userscript; no build step is required.
 
-## Performance and safety considerations
+## Implementation guidelines
 
-- Avoid adding work to hot paths such as DOM mutation callbacks or repeated list rendering.
-- Be careful with GraphQL caching and request deduplication; do not assume every request is interchangeable.
-- Do not collect, log, or request private account information unnecessarily.
-- Do not include cookies, authorization headers, login tokens, or personal account data in issues or pull requests.
-- If an optimization can fail, prefer a safe fallback that leaves normal browser behavior intact.
+- Keep the page usable if an optimization fails.
+- Be cautious with request caching, request deduplication, and stale fallbacks. Not all GraphQL requests are interchangeable.
+- Avoid adding repeated work to hot paths such as DOM mutation callbacks and list rendering.
+- Preserve compatibility with AniList and other userscripts where practical.
+- Do not add telemetry or external network destinations without clearly documenting the change and its privacy implications.
 
 ## Scope
 
-Changes should relate to AniList performance, compatibility, diagnostics, or maintainability. Large architectural changes should be discussed in an issue first.
+Changes should relate to performance, compatibility, diagnostics, safety, or maintainability of AniList Fast Load. Discuss large behavioural changes in an issue before investing in a large pull request.
